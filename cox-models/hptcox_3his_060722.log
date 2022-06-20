@@ -1,0 +1,66 @@
+NOTE: PROCEDURE PRINTTO used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+246      proc format;
+247      value yesnf .,0='No' 1='Yes';
+NOTE: Format YESNF has been output.
+248      value casef 1 = "Case" other="Control";
+NOTE: Format CASEF has been output.
+249      value $race2f '0','3','4','6' = "Other/Unknown" '1' = 'White' '2' = 'Black' '5' = 'Hispanic';
+NOTE: Format $RACE2F has been output.
+250      value $sexf '0'='Unknown' '1'='Male' '2'='Female';
+NOTE: Format $SEXF has been output.
+251      value year_selectedf 0='2008-2011' 1='2012-2015' 2='2016+';
+NOTE: Format YEAR_SELECTEDF has been output.
+252      value quintilef 0 = "Q1" 1 = "Q2" 2 = "Q3" 3 = "Q4" 4 = "Q5";
+NOTE: Format QUINTILEF has been output.
+253      run;
+
+NOTE: PROCEDURE FORMAT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+254      options orientation=portrait;
+255      ods rtf body="/sas/vrdc/users/bmo770/files/dua_026125/cs3/hyperparathyroid/reports/hptcox_3his_060722.rtf" style=style1
+255   ! bodytitle;
+NOTE: Writing RTF Body file: /sas/vrdc/users/bmo770/files/dua_026125/cs3/hyperparathyroid/reports/hptcox_3his_060722.rtf
+256      proc phreg data=&survival_input.;
+257      where bene_race_cd eq '5';
+258      class sex_ident_cd (ref='Female') /param=ref;
+259      class bene_race_cd (ref='Hispanic') /param=ref;
+260      class quintile_partD (ref='Q1') /param=ref;
+261      class selection_year_cat (ref='2008-2011') /param=ref;
+262      class has_lis (ref='No') /param=ref;
+263      class medicaid_eligible (ref='No') /param=ref;
+264      class quintile_average_visits (ref='Q1') /param=ref;
+265      model major_cerebvas_followup_time*has_major_cerebvas(0) = is_case surgonly ccrx has_p_major_cerebvas race_blk elg_hypr
+265   ! elg_diab elg_lipd sex_ident_cd bene_race_cd quintile_partD quintile_average_visits selection_year_cat has_lis
+265   ! medicaid_eligible / rl;
+266      if not missing(timesincesurg) and (timesincesurg < major_cerebvas_followup_time) then do;
+267      is_case =0;
+268      surgonly=1;
+269      end;
+270      if timesincesurg=. and not missing(timesinceccrx) and (timesinceccrx < major_cerebvas_followup_time) then do;
+271      is_case =0;
+272      ccrx=1;
+273      end;
+274      Test1: test is_case = surgonly = ccrx ;
+275      format is_case casef. surg yesnf. surgonly yesnf. ccrx yesnf. has_p_major_cerebvas yesnf. race_blk yesnf. elg_hypr yesnf.
+275   ! elg_diab yesnf. elg_lipd yesnf. sex_ident_cd $sexf. bene_race_cd $race2f. quintile_partD quintilef. selection_year_cat
+275   ! year_selectedf. has_lis yesnf. medicaid_eligible yesnf. quintile_average_visits quintilef.;
+276      title "Cox Regression (Cerebrovascular Outcome): Full model stratified by race (hispanic) w/ CI";
+277      run;
+
+NOTE: The CLASS variable BENE_RACE_CD has only one level.
+NOTE: Convergence criterion (GCONV=1E-8) satisfied.
+NOTE: The PROCEDURE PHREG printed pages 1-4.
+NOTE: PROCEDURE PHREG used (Total process time):
+      real time           1:35.47
+      cpu time            1:34.65
+      
+
+278      title;
+279      ods rtf close;
